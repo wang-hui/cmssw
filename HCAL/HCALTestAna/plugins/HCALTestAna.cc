@@ -10,12 +10,6 @@ Description: [one line class summary]
 Implementation:
 [Notes on implementation]
 */
-//
-// Original Author:  Brandon Chiarito
-//         Created:  Wed, 26 Feb 2020 23:00:23 GMT
-//
-//
-
 
 // system include files
 #include <memory>
@@ -29,9 +23,6 @@ Implementation:
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/InputTag.h"
-#include "DataFormats/TrackReco/interface/Track.h"
-#include "DataFormats/TrackReco/interface/TrackFwd.h"
-
 
 //calo headers
 #include "SimDataFormats/CaloHit/interface/PCaloHit.h"
@@ -41,8 +32,7 @@ Implementation:
 //STL headers
 #include <vector>
 #include <string>
-
-
+#include <iostream>
 //
 // class declaration
 //
@@ -51,9 +41,6 @@ Implementation:
 // the template argument to the base class so the class inherits
 // from  edm::one::EDAnalyzer<>
 // This will improve performance in multithreaded jobs.
-
-
-using reco::TrackCollection;
 
 class HCALTestAna : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 	public:
@@ -69,7 +56,6 @@ class HCALTestAna : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 		virtual void endJob() override;
 
 		edm::EDGetTokenT<std::vector<PCaloHit>> hcalhitsToken_;
-
 
 };
 
@@ -115,11 +101,14 @@ HCALTestAna::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	//   iEvent.getByLabel("g4SimHits", "HcalHits", hand);
 	const std::vector<PCaloHit> * SimHits = hcalhitsHandle.product();
 
-	for(auto iter : *SimHits) {
+	for(auto iter : *SimHits)
+	{
 		HcalDetId hid(iter.id());
-		int ieta = hid.ieta();
-		std::cout << ieta << ", ";
-
+		auto ieta = hid.ieta();
+		auto iphi = hid.iphi();
+		auto subdet = hid.subdet();
+		//std::cout << ieta << ", " << iphi << ", " << subdet << std::endl;
+		if(abs(ieta)>39) std::cout << ieta << ", " << iphi << ", " << subdet << std::endl;
 	}
 
 }
