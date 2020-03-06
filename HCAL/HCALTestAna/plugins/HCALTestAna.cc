@@ -108,7 +108,7 @@ HCALTestAna::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		auto iphi = hid.iphi();
 		auto subdet = hid.subdet();
 		//std::cout << ieta << ", " << iphi << ", " << subdet << std::endl;
-		if(abs(ieta)>39) std::cout << ieta << ", " << iphi << ", " << subdet << std::endl;
+		if(abs(ieta)>41) std::cout << ieta << ", " << iphi << ", " << subdet << std::endl;
 	}
 
 }
