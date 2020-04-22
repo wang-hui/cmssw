@@ -33,6 +33,7 @@ Implementation:
 #include "Geometry/HcalCommonData/interface/HcalHitRelabeller.h"
 #include "Geometry/Records/interface/HcalRecNumberingRecord.h"
 #include "SimCalorimetry/HcalSimAlgos/interface/HcalSimParameters.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 
 //STL headers
 #include <vector>
@@ -62,6 +63,7 @@ class HCALTestAna : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 		//void sum_energy_per_rawId(std::map <int, float> id_energy_map, int id, float energy);
 
 		edm::EDGetTokenT<std::vector<PCaloHit>> hcalhitsToken_;
+		edm::EDGetTokenT<std::vector<PileupSummaryInfo>> pileupInfoToken_;
 
 };
 
@@ -80,6 +82,7 @@ HCALTestAna::HCALTestAna(const edm::ParameterSet& iConfig)
 {
 	//now do what ever initialization is needed
 	hcalhitsToken_ = consumes<std::vector<PCaloHit>>(edm::InputTag("g4SimHits","HcalHits","SIM"));
+	pileupInfoToken_ = consumes<std::vector<PileupSummaryInfo>>(edm::InputTag("addPileupInfo","","HLT"));
 }
 
 
@@ -127,7 +130,7 @@ void HCALTestAna::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	//   iEvent.getByLabel("g4SimHits", "HcalHits", hand);
 	const std::vector<PCaloHit> * SimHits = hcalhitsHandle.product();
 
-	edm::ESHandle<HcalDDDRecConstants> pHRNDC;
+	ESHandle<HcalDDDRecConstants> pHRNDC;
 	iSetup.get<HcalRecNumberingRecord>().get(pHRNDC);
 	const HcalDDDRecConstants *hcons = &(*pHRNDC);
 
@@ -189,21 +192,38 @@ void HCALTestAna::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
 	//==================a test of unused rawId in HBHEChannelInfo, to be commented out===================
 	/*
-	std::vector <int> unused_rawId = {1158694932, 1158694943, 1158706207, 1159219206, 1159219208, 1159219212, 1159219213, 1159219216, 1159219222, 1159219226, 1159219227, 1159219228, 1159219229, 1159219230, 1159219231, 1159219232, 1159219233, 1159219234, 1159219269, 1159219270, 1159743519, 1159754783};
-	for (int i = 0; i < (int)unused_rawId.size(); i++)
-	{
-		HcalDetId hid_test(unused_rawId.at(i));
-		//hid_test = HcalDetId(HcalHitRelabeller::relabel(unused_rawId.at(i), hcons));
-		std::cout << hid_test.rawId() << ", " << hid_test.subdet() << ", " << hid_test.depth() << ", " << hid_test.ieta() << ", " << hid_test.iphi() << std::endl;
+	   std::vector <int> unused_rawId = {1158694932, 1158694943, 1158706207, 1159219206, 1159219208, 1159219212, 1159219213, 1159219216, 1159219222, 1159219226, 1159219227, 1159219228, 1159219229, 1159219230, 1159219231, 1159219232, 1159219233, 1159219234, 1159219269, 1159219270, 1159743519, 1159754783};
+	   for (int i = 0; i < (int)unused_rawId.size(); i++)
+	   {
+	   HcalDetId hid_test(unused_rawId.at(i));
+	//hid_test = HcalDetId(HcalHitRelabeller::relabel(unused_rawId.at(i), hcons));
+	std::cout << hid_test.rawId() << ", " << hid_test.subdet() << ", " << hid_test.depth() << ", " << hid_test.ieta() << ", " << hid_test.iphi() << std::endl;
 	}
 	*/
 	//==========================================end of test==============================================
 	//std::cout << "Total channel " << SimHits->size() << ", Nhb " << Nhb << ", Nhe " << Nhe << ", Nho " << Nho << ", Nhf " << Nhf << std::endl;
 	//std::cout << "id_energy_map.size() = " << id_energy_map.size() << std::endl;
-	std::cout << "gen: id, energy" << std::endl;
+
+	Handle<std::vector<PileupSummaryInfo>> pileupInfo;
+	iEvent.getByToken(pileupInfoToken_, pileupInfo);
+
+	//int true_npu = 0;
+	float obs_npu = 0;
+
+	for (std::vector<PileupSummaryInfo>::const_iterator pvi = pileupInfo->begin(); pvi != pileupInfo->end(); ++pvi)
+	{
+		int bx = pvi->getBunchCrossing();
+		if (bx == 0) {
+			//true_npu = pvi->getTrueNumInteractions();
+			obs_npu = pvi->getPU_NumInteractions();
+			break;
+		}
+	}
+
+	std::cout << "gen: id, energy, PU" << std::endl;
 	for(auto iter : id_energy_map)
 	{
-		std::cout << iter.first << ", " << iter.second << std::endl;
+		std::cout << iter.first << ", " << iter.second << ", " << obs_npu << std::endl;
 	}
 	std::cout << "reco: TS1 raw charge, TS1 ped noise, TS1 ADC count, TS1 rise time, TS2 raw charge, TS2 ped noise, TS2 ADC count, TS2 rise time, TS3 raw charge, TS3 ped noise, TS3 ADC count, TS3 rise time, TS4 raw charge, TS4 ped noise, TS4 ADC count, TS4 rise time, TS5 raw charge, TS5 ped noise, TS5 ADC count, TS5 rise time, TS6 raw charge, TS6 ped noise, TS6 ADC count, TS6 rise time, TS7 raw charge, TS7 ped noise, TS7 ADC count, TS7 rise time, TS8 raw charge, TS8 ped noise, TS8 ADC count, TS8 rise time, raw energy, gain, reco energy, id, sub detector, depth, ieta, iphi" << std::endl;
 }
